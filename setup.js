@@ -8,7 +8,8 @@ connection.execute('SHOW TABLES;', function(err, results, fields){
   console.log(results); 
 }); 
 
-connection.execute(`CREATE TABLE 'Games's
+console.log('Creating tables...');
+connection.execute(`CREATE TABLE 'Games'
     (
       'id' INT NOT NULL auto_increment,
       'title' VARCHAR(500) NOT NULL, 
