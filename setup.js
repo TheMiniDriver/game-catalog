@@ -17,8 +17,13 @@ connection.execute(`CREATE TABLE 'Games'
       'year' INT,
       'publisher' VARCHAR(500) NOT NULL
     );
-    `, function(err, results, fields){
-  console.log(results); 
+    `, 
+    function(err, results, fields){
+      console.log(results); 
+      if (err) {
+        console.error(err);
+      }
+  
 }); 
 
 
