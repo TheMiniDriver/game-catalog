@@ -56,11 +56,10 @@ router.delete('/:id', function(req, res, next){
 
 });
 
-
 function addNewGame(req, res, next){
   connection.query(
     `INSERT INTO games
-      (title, platform)
+      (title, platform, year)
       VALUES (?, ?, ?)`, 
       [req.body.title, req.body.platform, req.body.year],
     queryResults
