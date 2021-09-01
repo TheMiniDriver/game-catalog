@@ -2,9 +2,22 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+const passport = require('passport');  
+const BasicStrategy = require('passport-http').BasicStrategy; 
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+passport.use(new BasicStrategy(
+  function(username, password, done) {
+    return done(null, {name: "bradley"}); 
+    // db.users.findByUsername(username, function(err, user) {
+    //   if (err) { return cb(err); }
+    //   if (!user) { return cb(null, false); }
+    //   if (user.password != password) { return cb(null, false); }
+    //   return cb(null, user);
+    // });
+  })
+);
+
+var gamesRouter = require('./routes/games');
 
 var app = express();
 
@@ -14,7 +27,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
+
+app.use('/games', [passport.authenticate('basic', {session: false}), gamesRouter]); 
 
 module.exports = app;

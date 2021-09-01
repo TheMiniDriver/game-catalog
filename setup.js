@@ -4,29 +4,22 @@ console.log('Setting up Database....');
 
 const connection = mysql.createConnection(process.env.DATABASE_URL);
 
-connection.execute('SHOW TABLES;', function(err, results, fields){
-  console.log(results); 
-}); 
-
 console.log('Creating tables...');
-connection.execute(`CREATE TABLE 'Games'
-    (
-      'id' INT NOT NULL auto_increment,
-      'title' VARCHAR(500) NOT NULL, 
-      'platform' VARCHAR(500) NOT NULL,
-      'year' INT,
-      'publisher' VARCHAR(500) NOT NULL
-    );
+connection.execute(`
+    create table games
+      (
+        id int auto_increment,
+        title varchar(500) not null,
+        platform varchar(500) not null,
+        year int not null,
+        constraint games_pk
+          primary key (id)
+      );
     `, 
     function(err, results, fields){
-      console.log(results); 
       if (err) {
         console.error(err);
       }
-  
+      console.log(results); 
 }); 
 
-
-connection.execute('SHOW TABLES;', function(err, results, fields){
-  console.log(results); 
-}); 
