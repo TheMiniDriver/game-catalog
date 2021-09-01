@@ -264,36 +264,81 @@ If you visit the Code Capsules dashboard for the backend capsule, you should see
 ![empty get route](get-results.png)
 
 
-Run
-```bash
-npx express-generator --no-view
-npm install
-```
+This works, but is not very interesting! Let's add a Create route, so that we can add new game entries. 
 
-Add in a mySQL driver
-```bash
-npm install mysql2
-```
+### Adding a Create Route
 
+We'll use the [HTTP POST](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods) method as the verb for creating a new game in the catalogue. 
 
-Add file games.js
+For the create route, it would be nice to return the newly created entry, along with the id automatically created by MySQL for the entry. To do this, we'll first need to `INSERT` the new data into the database, and then run a `SELECT` command to retrieve the fully created database object. We can use the concept of ["middleware"](http://expressjs.com/en/guide/routing.html) in Express to achieve this. 
+
+Each route allows us to chain multiple handlers to it, with each handler running one after each other. This is the core concept of middleware. So to implement our Create route, with its two distinct operations, we can chain 2 handlers, like this: 
 
 ```js
-var express = require('express');
-var router = express.Router();
 
+router.post('/', [functionOne, functionTwo])
+
+```` 
+
+`functionOne` can pass control to `functionTwo` by calling the `next()` parameter which is passed into each handler by Express. We can also pass custom information from one handler to another by adding it onto the `req` object, which is also passed to each handler by Express
+
+Ok, enough theory, let's add this code using what we know from above:
+
+```js
+router.post('/', [addNewGame, returnGameById]);  
+
+
+function addNewGame(req, res, next){
+  connection.query(
+    `INSERT INTO games
+      (title, platform, year)
+      VALUES (?, ?, ?)`, 
+      [req.body.title, req.body.platform, req.body.year],
+    queryResults
+  );
+
+  function queryResults(err, results, fields){
+    if (err) return next(err); 
+    req.body.id = results.insertId
+    return next(); 
+  }
+}
+
+function returnGameById(req, res, done){
+  connection.query(`
+    SELECT * FROM games
+    WHERE id = ?
+    `,
+    [req.body.id],
+    queryResults
+  ); 
+
+  function queryResults(err, results, fields){
+    if (err) return next(err); 
+    return res.json(results); 
+  }
+}
 
 ```
 
+We've implemented each of the handler as separate named functions. You could implement both as inline functions, but once again it is a stylistic choice to improve readability. Also, by writing each handler as a named function, the list of the functions passed to the router is almost self-documenting, telling us the steps that the route takes. Lastly, we can also re-use each of the handlers in other routes if we need. 
 
-create table games
-(
-	id int auto_increment,
-	title varchar(500) not null,
-	platform varchar(500) not null,
-	constraint games_pk
-		primary key (id)
-);
+The first handler `addNewGame` uses a SQL `INSERT` query to create a new database row. Note the `?` placeholders in the query. This feature of the [`mysql2`](link) package allows us to pass in arguments to the query, instead of concating the query with our incoming values. The values passed in from the client can be found on the `req.body` object, neatly parsed into JSON by Express. We can pass these values in an array as an argument to the query function. The function will substitute each `?` for the values, in order that are passed in the array. We use a function `queryResults` as we did for the `get` route, as our callback. To note here is that the `results` parameter this time will have an object of stats and information on the `INSERT` operation. One of the fields is `insertId`, which is the auto assigned `id` of the new record in the database. We add this to the `req.body` object, and then call `next()` to pass control to the next handler, `returnGameById`. 
+
+`returnGameById` queries the database for the newly created object, using the `id` field we added to the `req.body` object in the first handler. In the callback for the query, `queryResults`, we return the database row as a JSON object, using the [`res.json`](link) method. 
+
+To test this, commit and push the code up again to Code Capsules.
+
+```bash
+git add . 
+git commit -am 'added post route for games'
+git push origin
+```
+
+Once it has successfully built and deployed on Code Capsules, we can try this new route out. To do this, download [Postman](link), which is a tool that makes it easier to interact with APIs. 
+
+Create a new query in Postman, with the HTTP method set to "POST". Set the URL to the URL of your backend capsule, along with the `/games` path. Then click the "Body" tab, select "raw" as the mime type, and select "JSON" from the dropdown as the content type. 
+
 
 
 
