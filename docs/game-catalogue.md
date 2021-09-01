@@ -179,6 +179,91 @@ If you navigate to the "Logs" tab on the backend capsule, you should see the scr
 
 ![setup database logs](setup-logs.png)
 
+Once this is done, you can change the "Run Command" under the "Configure" tab back to :
+
+```bash
+npm start
+```
+Remember to click "Update Capsule" to save this. 
+
+### Adding a Read Route
+
+Our database is setup with a new table. Let's add some code to create an API route to read from this table. 
+
+We'll add a new file to contain the API route code, to keep the solution neater. Add a new file called `games.js` in the `routes` folder in your project, with the following code:
+
+```js
+var express = require('express');
+const mysql = require('mysql2');
+
+var router = express.Router();
+
+const connection = mysql.createConnection(process.env.DATABASE_URL);
+
+router.get('/', function(req, res, next){
+  
+  connection.query(
+    `SELECT * FROM games`,
+    queryResults
+  ); 
+
+  function queryResults(err, results, fields){
+    if (err) return next(err); 
+    return res.json(results); 
+  }
+});
+```
+This code imports the express module, so that we can construct a `router`, and the `mysql2` module to that we can connect to the database. 
+
+We create a (`router`)[http://expressjs.com/en/5x/api.html#router], which is an object that allows us to group routes and middelware together logically. We'll add all our CRUD routes to this router object. Then we create a new database connection, as we did in our setup script. 
+
+Express routers allow us to add routes using the following structure:
+
+```js
+router.METHOD(PATH, HANDLER)
+```  
+
+`METHOD` is one of the standard [HTTP request methods](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods) to use. `PATH` is the relative part of the server URL to get to the route, and `HANDLER` is a function that we want run when the route is accessed. 
+
+To create the Read route, we use the HTTP `GET` verb, which can be configured using the `get` method on the router. Since we need no parameters, we set the path to `/`. Then we add our handler function. The function accepts 3 arguments from the Express router: 
+
+- `req`, which is all the incoming request parameters and context from the client.
+- `res`, a results object where we can specify how to return data to to the client.
+- `next`, a function that we can call to hand control to the next middleware in our route, if there is any. If we want to signal an error, we can pass an argument to `next`, Express will return an error to the client, with the data in that argument. 
+
+In our `get` handler, we run send a SQL query to the database to select all entries from the database. The `query` method takes a SQL query, and a callback function. This callback is called with the result, or error from the SQL server. We use a separate named function as our callback. This is mainly a stylistic choice - we could write the function inline, but our code might not be as readable as it will have many indentations, and creep to the right hand side of the screen. 
+
+In the callback, we check if the `err`, or error, paramater is set. If it is, we use the `next` function along with the error to exit the route early. This will send an error message to the client. 
+
+If there is no error, we send the results of the SQL query back, formatted as [JSON](https://en.wikipedia.org/wiki/JSON). 
+
+Now that we have the router setup, and our first route, we can hook it up to the main Express app. Open the `app.js` file in the route folder, and add the following code above the line `var app = express();`
+
+```js
+var gamesRouter = require('./routes/games');
+```
+This adds a reference to the router we defined in the `game.js` file. 
+
+Now, let's use this reference to add the router to the Express app. Add the following line just above the `module.exports = app;`: 
+
+```js
+app.use('/games', [ gamesRouter ]); 
+```
+This mounts the route at the path `/games` on our server. 
+
+Let's test all of this by committing and pushing these changes:
+
+```bash
+git add . 
+git commit -am 'added get route for games'
+git push origin
+```
+
+If you visit the Code Capsules dashboard for the backend capsule, you should see a note that it is building. Once it has finished building, head over to to your site in a browser, and navigate to the `/games` route. You should see it return an empty array:
+
+![empty get route](get-results.png)
+
+
 Run
 ```bash
 npx express-generator --no-view

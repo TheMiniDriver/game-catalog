@@ -1,6 +1,6 @@
-const mysql = require('mysql2');
 var express = require('express');
-const { route } = require('../app');
+const mysql = require('mysql2');
+
 var router = express.Router();
 
 const connection = mysql.createConnection(process.env.DATABASE_URL);
