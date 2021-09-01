@@ -6,7 +6,6 @@ var router = express.Router();
 const connection = mysql.createConnection(process.env.DATABASE_URL);
 
 router.get('/', function(req, res, next){
-  
   connection.query(
     `SELECT * FROM games`,
     queryResults
@@ -20,24 +19,7 @@ router.get('/', function(req, res, next){
 
 
 router.post('/', [addNewGame, returnGameById]); 
-
-
-router.put('/:id', function(req, res, next){
-
-  connection.query(
-    `UPDATE games
-      SET title = ?, platform = ?
-      WHERE id = ?`, 
-    [req.body.title, req.body.platform, req.params.id], 
-    queryResults
-  ); 
-
-  function queryResults(err, results, fields){
-    if (err) return next(err); 
-    return res.json(results); 
-  }
-
-});
+router.put('/:id', [updateGame, returnGameById]);
 
 
 router.delete('/:id', function(req, res, next){
@@ -68,6 +50,22 @@ function addNewGame(req, res, next){
   function queryResults(err, results, fields){
     if (err) return next(err); 
     req.body.id = results.insertId
+    return next(); 
+  }
+}
+
+function updateGame(req, res, next){
+  connection.query(
+    `UPDATE games
+      SET title = ?, platform = ?, year = ?
+      WHERE id = ?`, 
+    [req.body.title, req.body.platform, req.body.year, req.params.id], 
+    queryResults
+  ); 
+
+  function queryResults(err, results, fields){
+    if (err) return next(err); 
+    req.body.id = req.params.id
     return next(); 
   }
 }

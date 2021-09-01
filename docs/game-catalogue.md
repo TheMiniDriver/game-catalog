@@ -339,7 +339,52 @@ Once it has successfully built and deployed on Code Capsules, we can try this ne
 
 Create a new query in Postman, with the HTTP method set to "POST". Set the URL to the URL of your backend capsule, along with the `/games` path. Then click the "Body" tab, select "raw" as the mime type, and select "JSON" from the dropdown as the content type. 
 
+Add the following JSON payload to the body: 
+```js
+{
+    "title" : "Super Mario Brothers", 
+    "platform" : "NES",
+    "year" : 1985
+}
+```
 
+Click "Send", and your API should send back the newly inserted game, along with its `id`:
+
+![Post new game](post-game.png)
+
+### Adding an Update Route
+
+Now that we can add a game, and read back the catalogue, we might need to update an entry if we find an entry has a mistake. This is usually expressed as the [HTTP PUT method](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods). As a convention, the `id` of the document to update is passed in the URL path, and the updated document values are sent in the body. 
+
+We'll use the same pattern as we did for the `post` route, and re-use the `returnGameById` function to retrieve the newly updated row from the database. 
+
+Add this code to add the update route: 
+
+```js
+router.put('/:id', [updateGame, returnGameById]);
+
+function updateGame(req, res, next){
+  connection.query(
+    `UPDATE games
+      SET title = ?, platform = ?, year = ?
+      WHERE id = ?`, 
+    [req.body.title, req.body.platform, req.body.year, req.params.id], 
+    queryResults
+  ); 
+
+  function queryResults(err, results, fields){
+    if (err) return next(err); 
+    req.body.id = req.params.id
+    return next(); 
+  }
+}
+```
+
+This code is very similar to the `post` route. The major differences are that we use the SQL `UPDATE` statement to update an existing row. Note that we get the `id` of the row to update from the `req.params` object. This object contains all the parameters passed and defined in the path. 
+
+In the `queryResults` callback, we set the `req.body.id` field to the `id` from the `params`. This is so the `next()` handler can access the `id` of the updated record and retrieve the latest version from the database. 
+
+Commit and push this code to deploy it to Code Capsules. 
 
 
 Add in passport-http
