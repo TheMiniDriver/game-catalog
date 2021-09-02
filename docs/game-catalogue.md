@@ -388,7 +388,6 @@ Commit and push this code to deploy it to Code Capsules. Now you can test this r
 
 ![Put method with Postman](put-game.png)
 
-
 ### Adding a Delete Route
 
 The last route we need to add is a delete route to remove a game entry. Luckily, HTTP has a ["DELETE" method](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods) as part of its standard. 
@@ -413,7 +412,75 @@ router.delete('/:id', function(req, res, next){
 
 As in the update route, we expect the `id` of the record to delete to be provided by the client in the URL path. Then we run the SQL `DELETE` command, with the `id` from the path in `req.params.id` passed in to replace the single `?` placeholder. 
 
-The other part to note is because we don't have any record to return (we deleted it!), we just return an empty array as our JSON payload
+The other part to note is because we don't have any record to return (we deleted it!), we just return a [status code `200`](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes#2xx_success), which means everything worked OK. 
+
+
+Great, it's time to commit this code, push it up and test it. You should be able select the "DELETE" verb in Postman, and add in a game `id` to the route. Click "Send", and you should see a blank reply, with the status code as `200 OK`. 
+
+![Delete a record](delete-game.png)
+
+
+### Adding Authentication
+
+We've built a basic CRUD API, and we can do all the usual operations on it. However, anyone can access it. Let's add some authentication to take care of that issue. 
+
+For this tutorial, we'll implement a very simple access control system, that only allows access to one pre-defined user. We'll use the [HTTP Basic Authentication](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication) scheme for this, implemented with the [Passport](http://www.passportjs.org/docs/basic-digest/) package. 
+
+Let's start by installing the two packages required. The first is the base Passport package, and the second a package with the HTTP Basic Authentication strategy. 
+
+```bash
+npm install passport passport-http
+```
+
+Now we add this as middleware to check credentials before our `games` routes are called. In the `app.js` file, add the following near the top of the file, just under the other package `require` statements: 
+
+```js
+const passport = require('passport');  
+const BasicStrategy = require('passport-http').BasicStrategy; 
+```
+
+We'll need a place to store the user credentials, so we can check them against the credentials the client supplies. We'll store these credentials in the environment settings, as we'll be storing them in plain text, i.e unencrypted. In a production application, they would be stored in the database, with the password hashed and salted. We'll leave that option as something for you to explore :). 
+
+Head over to the "Config" page on your backend Code Capsule, and add 2 new environment variables : `USERNAME` and `PASSWORD`. Supply values of your own to set your username and password. 
+
+![Adding username and password](auth-variables.png)
+
+Now we can add the Passport code to check incoming credentials against these stored credentials. Add this code just above the `var gamesRouter = require('./routes/games');` line in `app.js`:
+
+```js
+passport.use(new BasicStrategy(
+  function(username, password, done) {
+    if (username === process.env.USERNAME && password === process.env.PASSWORD){
+      return done(null, {username: process.env.USERNAME }); 
+    }
+    else {
+      return done(null, false); 
+    }
+  })
+);
+```
+
+This sets up Passport to use the Basic Strategy for authentication. We supply a callback function which checks the incoming credentials against the credentials in the environment variables. If they match, we call the Passport `done()` function, with the a simple user object containing the user name. If there is no match, we call the `done()` function with `false` to signal that we found no match for the user. 
+
+The final part is to add the Passport authenticate middleware to the routes we want to protect. We'll add it to all our game routes. 
+
+Update the line: 
+```js
+app.use('/games', [gamesRouter]); 
+```
+
+to: 
+
+```js
+app.use('/games', [passport.authenticate('basic', {session: false}), gamesRouter]); 
+```
+
+We set the `session` flag to false, as the convention for APIs is to require credentials to be passed with every request, i.e. no session cookies are used. 
+
+Commit and push this updated code to deploy it. Once it is running, if you try any of the routes in Postman, you should see an authentication error message. 
+
+![Authentication error](auth-error.png)
+
 
 
 Add in passport-http

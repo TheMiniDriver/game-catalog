@@ -7,13 +7,12 @@ const BasicStrategy = require('passport-http').BasicStrategy;
 
 passport.use(new BasicStrategy(
   function(username, password, done) {
-    return done(null, {name: "bradley"}); 
-    // db.users.findByUsername(username, function(err, user) {
-    //   if (err) { return cb(err); }
-    //   if (!user) { return cb(null, false); }
-    //   if (user.password != password) { return cb(null, false); }
-    //   return cb(null, user);
-    // });
+    if (username === process.env.USERNAME && password === process.env.PASSWORD){
+      return done(null, {username: process.env.USERNAME }); 
+    }
+    else {
+      return done(null, false, {message: "Incorrect username or password"}); 
+    }
   })
 );
 
