@@ -27,7 +27,7 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 
-//app.use('/games', [passport.authenticate('basic', {session: false}), gamesRouter]); 
-app.use('/games', [gamesRouter]); 
+app.use('/games', [passport.authenticate('basic', {session: false}), gamesRouter]); 
+//app.use('/games', [gamesRouter]); 
 
 module.exports = app;
