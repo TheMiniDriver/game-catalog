@@ -23,7 +23,6 @@ router.put('/:id', [updateGame, returnGameById]);
 
 
 router.delete('/:id', function(req, res, next){
-  
   connection.query(
     `DELETE FROM games
       WHERE id = ?`, 
@@ -33,9 +32,8 @@ router.delete('/:id', function(req, res, next){
 
   function queryResults(err, results, fields){
     if (err) return next(err); 
-    return res.json(results); 
+    return res.json([]); 
   }
-
 });
 
 function addNewGame(req, res, next){

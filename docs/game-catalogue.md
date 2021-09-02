@@ -384,7 +384,36 @@ This code is very similar to the `post` route. The major differences are that we
 
 In the `queryResults` callback, we set the `req.body.id` field to the `id` from the `params`. This is so the `next()` handler can access the `id` of the updated record and retrieve the latest version from the database. 
 
-Commit and push this code to deploy it to Code Capsules. 
+Commit and push this code to deploy it to Code Capsules. Now you can test this route in Postman, by updating the HTTP method to `put`. Add the id `1` to the games path, and change some of the information in the body. Click "Send" and you should see the API return the update document. 
+
+![Put method with Postman](put-game.png)
+
+
+### Adding a Delete Route
+
+The last route we need to add is a delete route to remove a game entry. Luckily, HTTP has a ["DELETE" method](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods) as part of its standard. 
+
+The delete route will work similarly to our other routes. However, since we are removing a record, we don't need to return any data. We can just return the usual status code to signal everything worked OK. 
+
+```js
+router.delete('/:id', function(req, res, next){
+  connection.query(
+    `DELETE FROM games
+      WHERE id = ?`, 
+    [req.params.id],
+    queryResults
+  )
+
+  function queryResults(err, results, fields){
+    if (err) return next(err); 
+    return res.sendStatus(200);  
+  }
+});
+```
+
+As in the update route, we expect the `id` of the record to delete to be provided by the client in the URL path. Then we run the SQL `DELETE` command, with the `id` from the path in `req.params.id` passed in to replace the single `?` placeholder. 
+
+The other part to note is because we don't have any record to return (we deleted it!), we just return an empty array as our JSON payload
 
 
 Add in passport-http
