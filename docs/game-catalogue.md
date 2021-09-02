@@ -1,8 +1,10 @@
 # Building a Game Catalogue API 
 
-APIs are a common way to expose data and information on the internet. 
+APIs are a common way to expose data and information on the internet. Many web services and apps run off of multiple APIs in the background. Because APIs are so ubiquitous, it is very useful to learn the basics of how to build one. 
 
-In this tutorial, we'll build a simple API to provide Create, Read, Update and Delete (CRUD for short) functions for a personal game catalogue. We'll secure it with [HTTP Basic Authentication](link), while allowing easy upgrade to a more secure scheme. 
+In this tutorial, we'll build a simple [HTTP REST API](https://www.restapitutorial.com) to provide Create, Read, Update and Delete (CRUD for short) functions for a personal game catalogue. We'll secure it with [HTTP Basic Authentication](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication), while allowing easy upgrade to a more secure scheme. 
+
+We'll use [MySQL](https://www.mysql.com) as the datastore, [Node.js](https://nodejs.org/en/) as the application language, and Code Capsules to host all the components.
 
 ## Overview and Requirements
 
@@ -323,9 +325,9 @@ function returnGameById(req, res, done){
 
 We've implemented each of the handler as separate named functions. You could implement both as inline functions, but once again it is a stylistic choice to improve readability. Also, by writing each handler as a named function, the list of the functions passed to the router is almost self-documenting, telling us the steps that the route takes. Lastly, we can also re-use each of the handlers in other routes if we need. 
 
-The first handler `addNewGame` uses a SQL `INSERT` query to create a new database row. Note the `?` placeholders in the query. This feature of the [`mysql2`](link) package allows us to pass in arguments to the query, instead of concating the query with our incoming values. The values passed in from the client can be found on the `req.body` object, neatly parsed into JSON by Express. We can pass these values in an array as an argument to the query function. The function will substitute each `?` for the values, in order that are passed in the array. We use a function `queryResults` as we did for the `get` route, as our callback. To note here is that the `results` parameter this time will have an object of stats and information on the `INSERT` operation. One of the fields is `insertId`, which is the auto assigned `id` of the new record in the database. We add this to the `req.body` object, and then call `next()` to pass control to the next handler, `returnGameById`. 
+The first handler `addNewGame` uses a SQL `INSERT` query to create a new database row. Note the `?` placeholders in the query. This feature of the [`mysql2`](https://www.npmjs.com/package/mysql2) package allows us to pass in arguments to the query, instead of concating the query with our incoming values. The values passed in from the client can be found on the `req.body` object, neatly parsed into JSON by Express. We can pass these values in an array as an argument to the query function. The function will substitute each `?` for the values, in order that are passed in the array. We use a function `queryResults` as we did for the `get` route, as our callback. To note here is that the `results` parameter this time will have an object of stats and information on the `INSERT` operation. One of the fields is `insertId`, which is the auto assigned `id` of the new record in the database. We add this to the `req.body` object, and then call `next()` to pass control to the next handler, `returnGameById`. 
 
-`returnGameById` queries the database for the newly created object, using the `id` field we added to the `req.body` object in the first handler. In the callback for the query, `queryResults`, we return the database row as a JSON object, using the [`res.json`](link) method. 
+`returnGameById` queries the database for the newly created object, using the `id` field we added to the `req.body` object in the first handler. In the callback for the query, `queryResults`, we return the database row as a JSON object, using the [`res.json`](http://expressjs.com/en/5x/api.html#res.json) method. 
 
 To test this, commit and push the code up again to Code Capsules.
 
@@ -335,7 +337,7 @@ git commit -am 'added post route for games'
 git push origin
 ```
 
-Once it has successfully built and deployed on Code Capsules, we can try this new route out. To do this, download [Postman](link), which is a tool that makes it easier to interact with APIs. 
+Once it has successfully built and deployed on Code Capsules, we can try this new route out. To do this, download [Postman](https://www.postman.com), which is a tool that makes it easier to interact with APIs. 
 
 Create a new query in Postman, with the HTTP method set to "POST". Set the URL to the URL of your backend capsule, along with the `/games` path. Then click the "Body" tab, select "raw" as the mime type, and select "JSON" from the dropdown as the content type. 
 
@@ -441,7 +443,7 @@ const BasicStrategy = require('passport-http').BasicStrategy;
 
 We'll need a place to store the user credentials, so we can check them against the credentials the client supplies. We'll store these credentials in the environment settings, as we'll be storing them in plain text, i.e unencrypted. In a production application, they would be stored in the database, with the password hashed and salted. We'll leave that option as something for you to explore :). 
 
-Head over to the "Config" page on your backend Code Capsule, and add 2 new environment variables : `USERNAME` and `PASSWORD`. Supply values of your own to set your username and password. 
+Head over to the "Config" page on your backend Code Capsule, and add 2 new environment variables : `USERNAME` and `PASSWORD`. Supply values of your own to set your username and password, and click `Update Capsule` when you are done.  
 
 ![Adding username and password](auth-variables.png)
 
@@ -481,12 +483,21 @@ Commit and push this updated code to deploy it. Once it is running, if you try a
 
 ![Authentication error](auth-error.png)
 
+To send the credentials along with your request, select the "Auth" tab in Postman. Choose "Basic Auth" from the dropdown list, and enter the credentials you set in the right hand pane.
 
+![Postman Auth Settings](auth-settings.png)
 
-Add in passport-http
+If you try your query again, it should let you pass, and come back with the usual response. 
 
-```bash
-npm install passport-http
-```
+![Authentication success](auth-success.png)
+
+## Next Steps
+
+Congratulations! You've built an HTTP Rest CRUD API! There are more things to try: 
+
+- Add more routes. For example, you could add a review for each game
+- Try different authentication schemes. There are a lot on Passport to choose from. It could be interesting to implement an OAuth 2.0 scheme, as these are often used in production. 
+- Try adding validation to the routes, to ensure that the incoming data is in the correct format and has all the neccessary fields. 
+
 
 
